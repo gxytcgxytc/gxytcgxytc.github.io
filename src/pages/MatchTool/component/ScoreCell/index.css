@@ -1,0 +1,31 @@
+.score-cell-blue {
+    height: 34px;
+    line-height: 34px;
+    width: 200px;
+    font-size: 28px;
+    font-style: italic;
+    font-weight: 1000;
+    box-sizing: content-box;
+    color: #09f;
+    /* background: #ABE; */
+    -webkit-text-stroke: 1px #fff;
+    /* color: pink; */
+    margin: auto;
+}
+
+.score-cell-red {
+    height: 34px;
+    line-height: 34px;
+    width: 200px;
+    font-size: 28px;
+    font-style: italic;
+    font-weight: 1000;
+    box-sizing: content-box;
+    -webkit-text-stroke: 1px #fff;
+    /* color: pink; */
+    margin: auto;
+    color: #d64545;
+    /* background: #d79fde; */
+    margin: auto;
+
+}

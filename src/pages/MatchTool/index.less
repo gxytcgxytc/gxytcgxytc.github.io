@@ -1,0 +1,395 @@
+.hexagon-box1 (@height, @width, @color: #611111, @right: 25px, @left: 25px) {
+  background: @color;
+
+  height: @height;
+  width : @width;
+
+  &:before {
+    content      : "";
+    position     : absolute;
+    top          : 0;
+    left         : -@right;
+    width        : 0;
+    height       : 0;
+    border-left  : 0px solid transparent;
+    border-right : @right solid @color;
+    border-bottom: @height/2 solid transparent;
+    border-top   : @height/2 solid transparent;
+
+  }
+
+  &:after {
+    content      : "";
+    position     : absolute;
+    bottom       : 0;
+    right        : -@left;
+    width        : 0;
+    height       : 0;
+    border-left  : @left solid @color;
+    border-right : 0px solid transparent;
+    border-bottom: @height/2 solid transparent;
+    border-top   : @height/2 solid transparent;
+  }
+}
+
+body {
+  background: linear-gradient(to left, #000, #400, #101, #004, #000);
+}
+
+.MatchList {
+  // background: #000000;
+
+
+  /* 其它样式 */
+  :global {
+    p {
+      text-shadow: red 0 0 10px;
+      color      : #fff;
+      padding    : 100px 0 50px;
+      font-size  : 46px;
+      text-align : center;
+    }
+
+    .main-container {
+      width : 1200px;
+      margin: 0 auto;
+      height: 100%;
+    }
+
+    .match-list-banner {
+      height    : 140px;
+      background: linear-gradient(rgba(241, 17, 17, 0.3), rgba(170, 0, 0, 0.8), rgba(170, 0, 0, 0.8), rgba(170, 0, 0, 0.9), rgba(242, 34, 34, 0.3));
+      padding: 20px;
+      position  : relative;
+
+    }
+
+    .mp-info-items0 {
+      color    : #ffffff;
+      font-size: 16px;
+    }
+
+    .mp-info-items0 div {
+      text-overflow: ellipsis;
+      overflow     : hidden;
+      white-space  : nowrap;
+      width        : 300px;
+      text-align   : left;
+
+      height     : 34px;
+      line-height: 34px;
+
+    }
+
+    .mp-info-items1 {
+      flex       : 1;
+      color      : #ff66ab;
+      text-align : center;
+      font-style : italic;
+      font-weight: 700;
+      font-size  : 16px;
+
+      .score-cell-blue {
+        height     : 34px;
+        line-height: 34px;
+      }
+
+      // background: linear-gradient(to left, blue , black);
+    }
+
+    .mp-info-items2 {
+      flex       : 1;
+      color      : #ff66ab;
+      text-align : center;
+      font-style : italic;
+      font-weight: 700;
+      font-size  : 16px;
+
+      .score-cell-red {
+        height     : 34px;
+        line-height: 34px;
+      }
+
+      // background: linear-gradient(to right, red , black);
+    }
+
+    .hexagon-box-banner {
+      .hexagon-box1(70px, 500px);
+      position: absolute;
+      top     : 36px;
+      right   : 15%;
+
+      .hexagon-score {
+        display       : inline-block;
+        vertical-align: top;
+
+        >span {
+          color       : #fff;
+          font-size   : 38px;
+          width       : 74px;
+          line-height : 70px;
+          display     : inline-block;
+          margin-right: 7px;
+          font-style  : italic;
+        }
+      }
+    }
+
+    .hexagon-box-name {
+
+      display    : inline-flex;
+      height     : 70px;
+      align-items: center;
+      line-height: 70px;
+
+      >div {
+        box-shadow : -1px 2px 14px -10px #fff;
+        height     : 45px;
+        line-height: 45px;
+        display    : inline-block;
+      }
+
+      span:first-child {
+        .hexagon-box1(45px, 110px, blue, 20px, 0px);
+        position   : relative;
+        font-weight: 700;
+
+        background: blue;
+        color     : #dccccc;
+        font-size : 15px;
+        width     : 110px;
+        display   : inline-block;
+        text-align: center;
+        font-style: italic;
+        word-break: break-all;
+      }
+
+      span:last-child {
+        .hexagon-box1(45px, 110px, red, 0px, 20px);
+        position   : relative;
+        font-weight: 700;
+
+        background: red;
+        color     : #dccccc;
+        font-size : 15px;
+        width     : 110px;
+        display   : inline-block;
+        text-align: center;
+        font-style: italic;
+        word-break: break-all;
+      }
+    }
+    footer {
+      >div {
+        display: flex;
+        width: 30%;
+        margin: auto;
+        justify-content: space-around;
+        color: #666666;
+        a {
+          color: #666666;
+        }
+      }
+    }
+  }
+}
+
+.MatchInfoTable {
+  margin-top: 24px;
+
+  :global {
+    .ant-table-column-title {
+      color    : #dddddd;
+      font-size: 18px;
+    }
+
+    .red-winner-table-cell {
+      display : block;
+      position: relative;
+
+      &::after {
+        content  : var(--Score);
+        position : absolute;
+        display  : block;
+        top      : 28px;
+        color    : #F88;
+        left     : 200px;
+        font-size: 16px;
+      }
+    }
+
+    .blue-winner-table-cell {
+      display : block;
+      position: relative;
+
+      &::after {
+        content  : var(--Score);
+        position : absolute;
+        display  : block;
+        top      : 28px;
+        color    : #88f;
+        left     : 200px;
+        font-size: 16px;
+      }
+    }
+
+    .expend-container {
+      display            : block;
+      width              : 100%;
+      background-position: 50%;
+      background-size    : cover;
+      border-radius      : 10px;
+
+      .backgrount-layout {
+        background-color: rgba(0, 0, 0, 0.65);
+        border-radius   : 10px;
+        padding         : 24px;
+
+        h4 {
+          color: #ccc;
+        }
+
+        span {
+          color    : #ade;
+          font-size: 16px;
+          flex     : 1;
+        }
+
+        >div:first-child {
+          span {
+            font-size: 18px;
+            color    : #BCD;
+          }
+        }
+
+        .blue-team-detail {
+          flex      : 1;
+          display   : flex;
+          width     : 50%;
+          text-align: left;
+        }
+
+        .red-team-detail {
+          flex      : 1;
+          display   : flex;
+          width     : 50%;
+          text-align: right;
+        }
+      }
+    }
+
+    tr.ant-table-expanded-row,
+    tr.ant-table-expanded-row:hover {
+      background: none;
+
+      td {
+        border-radius: 16px !important;
+        transform    : scale(0.9);
+      }
+    }
+
+    tr.ant-table-expanded-row {
+      td {
+        padding: 0;
+      }
+    }
+
+    .ant-table table {
+      width : 98%;
+      margin: auto;
+    }
+
+    .ant-table-tbody>tr.ant-table-row {
+      background: rgb(114, 114, 120);
+    }
+
+    .ant-table-thead>tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected)>td,
+    .ant-table-tbody>tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected)>td,
+    .ant-table-thead>tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected)>td,
+    .ant-table-tbody>tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected)>td {
+      background: rgb(114, 114, 120);
+    }
+
+    .ant-table-placeholder {
+      background-color: #46393f;
+      border-width    : 0;
+
+      p {
+        color      : rgb(217, 166, 189);
+        text-shadow: none;
+      }
+
+      .ant-empty-image {
+        opacity: 0.4;
+      }
+    }
+
+    .ant-table-align-center {
+      background-color: rgb(42, 34, 38);
+    }
+
+    .ant-table-body {
+
+      padding         : 10px 0;
+      background-color: rgb(70, 57, 63);
+
+    }
+
+    .ant-table-thead>tr>th {
+      color           : rgba(0, 0, 0, 0.85);
+      font-weight     : 500;
+      text-align      : left;
+      background-color: rgb(42, 34, 38);
+      border-bottom   : 1px solid rgb(70, 57, 63);
+      transition      : background 0.3s ease;
+    }
+
+    .ant-table-thead>tr:first-child>th:last-child {
+      border-radius: 0 10px 10px 0;
+    }
+
+    .ant-table-thead>tr:first-child>th:first-child {
+      border-radius: 10px 0 0 10px;
+    }
+
+    .ant-table-tbody {
+      >tr>td {
+        border-color    : #46393f;
+        border-style    : solid;
+        border-width    : 8px 0;
+        transition      : all 0.3s, border 0s;
+        /* background   : #f5a; */
+        background-color: rgb(84, 69, 76);
+        font-size       : 16px;
+        color           : #cccccc;
+        font-style      : italic;
+        font-weight     : 700;
+      }
+
+      >tr>td:first-child {
+        border-left-width   : 8px;
+        transition          : all 0.3s, border 0s;
+        /* background       : #f5a; */
+        background-color    : rgb(84, 69, 76);
+        // border-radius    : 16px 0 0 16px;
+        font-size           : 25px;
+        color               : #ff66ab;
+        font-style          : italic;
+        font-weight         : 700;
+      }
+
+      >tr>td:last-child {
+        border-right-width   : 8px;
+        transition           : all 0.3s, border 0s;
+        /* background        : #f5a; */
+        background-color     : rgb(84, 69, 76);
+        // border-radius     : 0 16px 16px 0;
+        font-size            : 25px;
+        color                : #ff66ab;
+        font-style           : italic;
+        font-weight          : 700;
+
+      }
+    }
+  }
+}
