@@ -93,7 +93,7 @@ export default {
     //   component: '../layouts/SecurityLayout',
     //   routes: [
     {
-      path: '/matchtool',
+      path: '/',
       // name: 'MatchTool',
       component: './MatchTool/index.js'
     },
