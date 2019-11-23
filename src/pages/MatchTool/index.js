@@ -274,7 +274,7 @@ class MatchList extends PureComponent {
         <p>MATCH VIEWER</p>
         <div style={{ color: '#444' }}>还在写...</div>
         <div className="match-list-banner">
-          <div style={{ width: 440, marginLeft: '7%' }}>
+          <div style={{ width: 450, marginLeft: '7%' }}>
             <Input style={{ width: '341px', margin: 10 }}
               value={this.state.mplink || ''}
               onChange={setValue}
