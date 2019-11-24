@@ -97,20 +97,20 @@ export default {
       // name: 'MatchTool',
       component: './MatchTool/index.js'
     },
-    {
-      path: '/',
-      component: '../layouts/BasicLayout',
-      redirect: './matchtool',
-      // authority: ['admin', 'user'],
-      routes: [
-        {
-          path: '/welcome',
-          name: 'welcome',
-          hideInMenu: true,
-          component: './Welcome',
-        },
-      ],
-    },
+    // {
+    //   path: '/',
+    //   component: '../layouts/BasicLayout',
+    //   redirect: './matchtool',
+    //   // authority: ['admin', 'user'],
+    //   routes: [
+    //     {
+    //       path: '/welcome',
+    //       name: 'welcome',
+    //       hideInMenu: true,
+    //       component: './Welcome',
+    //     },
+    //   ],
+    // },
   ],
   // Theme for antd: https://ant.design/docs/react/customize-theme-cn
   theme: {

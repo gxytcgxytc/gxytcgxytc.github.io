@@ -59,7 +59,7 @@ body {
     .match-list-banner {
       height    : 140px;
       background: linear-gradient(rgba(241, 17, 17, 0.3), rgba(170, 0, 0, 0.8), rgba(170, 0, 0, 0.8), rgba(170, 0, 0, 0.9), rgba(242, 34, 34, 0.3));
-      padding: 20px;
+      padding   : 20px;
       position  : relative;
 
     }
@@ -147,45 +147,55 @@ body {
         height     : 45px;
         line-height: 45px;
         display    : inline-block;
+        >span:first-child {
+          .hexagon-box1(45px, 110px, blue, 20px, 0px);
+          position   : relative;
+          font-weight: 700;
+          background : blue;
+          color      : #dccccc;
+          font-size  : 15px;
+          width      : 110px;
+          display    : inline-block;
+          text-align : center;
+          font-style : italic;
+          word-break : break-all;
+          vertical-align: middle;
+          span {
+            line-height: 22px;
+            display: inline-block;
+          }
+        }
+  
+        >span:last-child {
+          .hexagon-box1(45px, 110px, red, 0px, 20px);
+          position   : relative;
+          font-weight: 700;
+          background : red;
+          color      : #dccccc;
+          font-size  : 15px;
+          width      : 110px;
+          display    : inline-block;
+          text-align : center;
+          font-style : italic;
+          word-break : break-all;
+          vertical-align: middle;
+          span {
+            line-height: 22px;
+            display: inline-block;
+          }
+        }
       }
 
-      span:first-child {
-        .hexagon-box1(45px, 110px, blue, 20px, 0px);
-        position   : relative;
-        font-weight: 700;
-
-        background: blue;
-        color     : #dccccc;
-        font-size : 15px;
-        width     : 110px;
-        display   : inline-block;
-        text-align: center;
-        font-style: italic;
-        word-break: break-all;
-      }
-
-      span:last-child {
-        .hexagon-box1(45px, 110px, red, 0px, 20px);
-        position   : relative;
-        font-weight: 700;
-
-        background: red;
-        color     : #dccccc;
-        font-size : 15px;
-        width     : 110px;
-        display   : inline-block;
-        text-align: center;
-        font-style: italic;
-        word-break: break-all;
-      }
     }
+
     footer {
       >div {
-        display: flex;
-        width: 30%;
-        margin: auto;
+        display        : flex;
+        width          : 30%;
+        margin         : auto;
         justify-content: space-around;
-        color: #666666;
+        color          : #666666;
+
         a {
           color: #666666;
         }

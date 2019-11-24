@@ -4,6 +4,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import styles from './index.less'
 import ScoreCell from './component/ScoreCell'
 import getColumns from './component/columns';
+import { getXlsxFile } from './component/ExcelComponents';
 const { Option } = Select;
 // 没有对fail的分数处理  ******************************************
 
@@ -14,14 +15,15 @@ class MatchList extends PureComponent {
       mplink: '',
       mpdata: {},
       finalScore: [0, 0],
-      menberNum: 8,
+      member: 6,
       apiKey: '',
     }
   }
 
   componentDidMount() {
     this.setState({
-      apiKey: localStorage.getItem('apiKey') || ''
+      apiKey: localStorage.getItem('apiKey') || '',
+      mplink: localStorage.getItem('mplink') || '',
     })
   }
   // 链接处理失败
@@ -47,6 +49,7 @@ class MatchList extends PureComponent {
     this.setState({ loading: true })
     const { mplink = '', apiKey = '' } = this.state;
     localStorage.setItem('apiKey', apiKey)
+    localStorage.setItem('mplink', mplink)
     const link = mplink.replace(/\s/g, '').match(/([0-9]*)$/g) && mplink.replace(/\s/g, '').match(/([0-9]*)$/g)[0];
     if (link) {
       try {
@@ -155,10 +158,10 @@ class MatchList extends PureComponent {
   }
   getMatchData = (games, users) => {
     // 参赛人数
-    const { menberNum } = this.state;
+    const { member } = this.state;
     return games.map((i, index) => {
       const scores = i.scores.map(result => {
-        if (Number.parseInt(result.slot) < Number.parseInt(menberNum)) {// 判断是否为选手
+        if (Number.parseInt(result.slot) < Number.parseInt(member)) {// 判断是否为选手
           const simpleScore = {};
           const {
             count300 = 0,
@@ -175,10 +178,10 @@ class MatchList extends PureComponent {
         }
         return undefined;
       })
-      i.blueScores = scores.slice(0, menberNum / 2);
-      i.redScores = scores.slice(menberNum / 2, menberNum);
-      i.blueTeamScores = this.getScore(scores.slice(0, menberNum / 2));
-      i.redTeamScores = this.getScore(scores.slice(menberNum / 2, menberNum));
+      i.blueScores = scores.slice(0, member / 2);
+      i.redScores = scores.slice(member / 2, member);
+      i.blueTeamScores = this.getScore(scores.slice(0, member / 2));
+      i.redTeamScores = this.getScore(scores.slice(member / 2, member));
       return i;
     })
   }
@@ -202,30 +205,32 @@ class MatchList extends PureComponent {
 
   // 渲染展开行
   expandedRowRender = (record, index, indent, expanded) => {
-    const { menberNum } = this.state;
+    const { member } = this.state;
     if (record.blueScores.length) {
       const Children = []
-      for (let i = 0; i < menberNum / 2; i++) {
-        const child = <div style={{ display: 'flex' }}>
-          <div className="blue-team-detail">
-            <span>{record.blueScores[i].username}</span>
-            <span>{record.blueScores[i].acc}</span>
-            <span>{record.blueScores[i].combo}</span>
-            <span>{this.formatNum(record.blueScores[i].score)}</span>
+      for (let i = 0; i < member / 2; i++) {
+        if (record.blueScores[i] && record.redScores[i]) {
+          const child = <div style={{ display: 'flex' }} key={`${i}Scores`}>
+            <div className="blue-team-detail">
+              <span>{record.blueScores[i].username}</span>
+              <span>{record.blueScores[i].acc}</span>
+              <span>{record.blueScores[i].combo}</span>
+              <span>{this.formatNum(record.blueScores[i].score)}</span>
+            </div>
+            <div className="red-team-detail">
+              {record.redScores[i] ?
+                <>
+                  <span>{this.formatNum(record.redScores[i].score)}</span>
+                  <span>{record.redScores[i].combo}</span>
+                  <span>{record.redScores[i].acc}</span>
+                  <span>{record.redScores[i].username}</span>
+                </>
+                : <span>...掉线了?.,..</span>
+              }
+            </div>
           </div>
-          <div className="red-team-detail">
-            {record.redScores[i] ?
-              <>
-                <span>{this.formatNum(record.redScores[i].score)}</span>
-                <span>{record.redScores[i].combo}</span>
-                <span>{record.redScores[i].acc}</span>
-                <span>{record.redScores[i].username}</span>
-              </>
-              : <span>...掉线了?.,..</span>
-            }
-          </div>
-        </div>
-        Children.push(child)
+          Children.push(child)
+        }
       }
       return (
         <div className="expend-container" style={{ backgroundImage: `url(https://assets.ppy.sh/beatmaps/${record.beatmapset_id}/covers/cover.jpg)` }}>
@@ -268,11 +273,12 @@ class MatchList extends PureComponent {
     } = this.state.mpdata;
     const {
       loading,
+      member,
     } = this.state
     return (
       <div className={styles.MatchList}>
         <p>MATCH VIEWER</p>
-        <div style={{ color: '#444' }}>还在写...</div>
+        <div style={{ color: '#444' }}>还在写...由于低技术力此页面随时可能崩溃...</div>
         <div className="match-list-banner">
           <div style={{ width: 450, marginLeft: '7%' }}>
             <Input style={{ width: '341px', margin: 10 }}
@@ -289,9 +295,9 @@ class MatchList extends PureComponent {
             />
             <Select
               placeholder="队伍规模是?"
-              onChange={(e) => { this.setState({ menberNum: e }) }}
+              onChange={(e) => { this.setState({ member: e }) }}
               style={{ width: '120px', margin: 10 }}
-              value={this.state.menberNum}
+              value={this.state.member}
             >
               <Option value={2}>1 v 1</Option>
               <Option value={4}>2 v 2</Option>
@@ -308,17 +314,23 @@ class MatchList extends PureComponent {
             </div>
             <div className="hexagon-box-name">
               <div>
-                <span>{teamNames[0]}</span>
-                <span>{teamNames[1]}</span>
+                <span><span>{teamNames[0]}</span></span>
+                <span><span>{teamNames[1]}</span></span>
               </div>
             </div>
           </div>
         </div>
         <div className="main-container">
+          <Button style={{
+            position: 'relative',
+            top: '12px',
+            left: '1124px',
+          }} onClick={() => getXlsxFile(matchData, member)} type="primary">xlsx<Icon type="download" /></Button>
           <div className="mp-info">
             <Table
               loading={loading}
               pagination={false}
+              rowKey={record => record.blueTeamScores + record.redTeamScores}
               className={styles.MatchInfoTable}
               dataSource={matchData}
               columns={getColumns.call(this, teamNames)}
