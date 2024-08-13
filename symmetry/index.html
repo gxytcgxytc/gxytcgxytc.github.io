@@ -23,13 +23,21 @@
 <body>
   拖...拖拽到右侧 <input type="file" id="file" class="file">
   <p></p>
-  <canvas id="canvas1" width="400px" height="300px"></canvas>
-  <canvas id="canvas2" width="400px" height="300px"></canvas>
-  <canvas id="canvas3" width="400px" height="300px"></canvas>
-  <canvas id="canvas4" width="400px" height="300px"></canvas>
+  <canvas id="canvas1" width="400px" height="300px"></canvas><button onclick="download('canvas1')">下载</button>
+  <canvas id="canvas2" width="400px" height="300px"></canvas><button onclick="download('canvas2')">下载</button>
+  <canvas id="canvas3" width="400px" height="300px"></canvas><button onclick="download('canvas3')">下载</button>
+  <canvas id="canvas4" width="400px" height="300px"></canvas><button onclick="download('canvas4')">下载</button>
 </body>
 
 <script>
+  const download = (selector) => {
+    const canvas = document.querySelector(selector);
+    const el = document.createElement(a);
+    el.href = canvas.toDataURL();
+    el.download = "cymmetry";
+    const event = new MouseEvent('click');
+    el.dispatchEvent(event);
+  }
   const file = document.getElementById('file');
   file.ondragenter = () => {
     file.classList.add('dragover');
