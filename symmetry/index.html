@@ -34,12 +34,10 @@
   file.ondragenter = () => {
     file.classList.add('dragover');
   }
-  file.addEventListener("drop", (e) => {
+  file.onchange = () => {
     file.classList.remove('dragover');
-    setTimeout(() => {
-      create()
-    })
-  }, 200);
+    create();
+  }
   file.ondragleave = () => {
     file.classList.remove('dragover');
   }
