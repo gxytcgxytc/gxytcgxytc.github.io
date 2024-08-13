@@ -32,7 +32,7 @@
 <script>
   const download = (selector) => {
     const canvas = document.querySelector(selector);
-    const el = document.createElement(a);
+    const el = document.createElement("a");
     el.href = canvas.toDataURL();
     el.download = "cymmetry";
     const event = new MouseEvent('click');
