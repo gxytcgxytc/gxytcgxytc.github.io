@@ -35,8 +35,16 @@
 
 <script type="module">
   const container = document.getElementById("imgContainer");
-  const clearContainer = () => container.innerHTML = ''
+  const clearContainer = () => {
+    [...container.children].map(ele => {
 
+      if (ele.src) {
+        URL.revokeObjectURL(ele.src)
+      }
+      ele.remove()
+
+    })
+  }
 
   const download = (selector) => {
     const canvas = document.querySelector(selector);
@@ -271,12 +279,21 @@
       width: ele.width,
       height: ele.height,
     })
+
+    // 上一frame的累计color
+    let lastFullFrameColor = []; // [[255,255,255], [255,255,255], ...]
     // 遍历添加帧
     frames.map((frame, ind) => {
+      if (!lastFullFrameColor.length) {
+        lastFullFrameColor = frame.pixels.map(p => [...(frame.colorTable[p] || [255, 255, 255]), p === frame.transparentIndex ? 0 : 255]);
+      }
+      if (frame.disposalType === 2) {
+        lastFullFrameColor = frame.pixels.map(p => [255, 255, 255, 255]);
+      }
       const patchArr = frame.pixels.map((pixel, innerIndex) => {
         // 当前像素是透明像素
         if (pixel === frame.transparentIndex) {
-
+          return lastFullFrameColor[innerIndex]
           // 寻找【对应位置】最后一个不是透明像素的帧
           let havecolorIndex = ind;
 
@@ -292,25 +309,23 @@
           const _pixel = frames[havecolorIndex].pixels[innerIndex]
           // 将其展示
           return [...(_frame.colorTable[_pixel]), 255];
+        } else {
+          lastFullFrameColor[innerIndex] = [...frame.colorTable[pixel], 255];
         }
         return [...frame.colorTable[pixel], 255]
       }).flat();
 
       const patch = new Uint8Array(patchArr)
       frame.patch = patch;
-
       const imageData = frame2data(frame)
 
       ctx.putImageData(imageData, 0, 0);
-      gif.addFrame(ctx, { delay: 100, copy: true });
+
+      gif.addFrame(ctx, { delay: frame.delay, copy: true });
     })
     gif.on('finished', function (blob) {
       const newImg = document.createElement("img");
       const url = URL.createObjectURL(blob);
-      newImg.onload = () => {
-        // 不再需要读取该 blob，因此释放该对象
-        URL.revokeObjectURL(url);
-      };
       newImg.src = url;
       imgContainer.appendChild(newImg)
     });
@@ -319,7 +334,19 @@
 
   const gifSymmetry = (gifData, _frames, direction) => {
     const [ctx, ele] = preDrawGifCtx(gifData);
-    const frames = _frames.map(f => {
+    const frames = _frames.map((f, ind) => {
+      // 把所有帧的宽高固定并且充满透明颜色;
+      const { top, left, width, height } = f.dims
+      const prevFrame = _frames[ind - 1] || { pixels: [] }
+      if (f.pixels.length < prevFrame.pixels.length) {
+        const fillFullPixels = new Array(prevFrame.pixels.length).fill(f.transparentIndex)
+        f.pixels.forEach((p, index) => {
+          const row = Math.floor(index / width) + top;
+          fillFullPixels[row * prevFrame.dims.width + left + index % width] = p
+        })
+        f.pixels = fillFullPixels
+        f.dims = prevFrame.dims
+      }
       return transform(direction, f)
     })
     drawGif(frames, ctx);
