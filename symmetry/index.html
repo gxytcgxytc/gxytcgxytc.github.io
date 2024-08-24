@@ -103,11 +103,6 @@
       const newImg = document.createElement("img");
       const url = URL.createObjectURL(blob);
 
-      newImg.onload = () => {
-        // 不再需要读取该 blob，因此释放该对象
-        URL.revokeObjectURL(url);
-      };
-
       newImg.src = url;
       imgContainer.appendChild(newImg);
     });
