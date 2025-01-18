@@ -40,6 +40,10 @@ showkey.onclick = () => {
 download.onclick = function () {
   log.innerText = ''
   logWrite('神秘日志\n');
+  if(!legacy) {
+    showkey.onclick();
+    return alert('请先填写你的api key');
+  }
   const reader = new FileReader()
   reader.onload = async function () {
     const lines = reader.result.split('\n').filter(Boolean)
