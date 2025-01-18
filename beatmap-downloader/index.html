@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>beatmap-downloader</title>
+</head>
+
+<body>
+  <div>
+    <input type="file" id="file" style="padding: 20px 50px" />
+    <button id="download">下载</button>
+    <button id="showkey">设置apikey</button>
+    <pre id="log" style="height: 500px; background-color: #eaeaea; padding: 24px;"></pre>
+    <div id="submitContainer"
+      style="top: 0; left: 0; height: 100vh; width: 100vw; display: none; position: absolute; justify-content: center; background-color: rgba(0,0,0,0.7);">
+      <div style="margin-top: 200px; background-color: #fff; padding: 20px; height: 100px;">
+        <div>请输入osu api v1 key 只会保存在本地</div>
+        <input id="submit" placeholder="输入apikey" />
+        <button id="submitBtn"
+          onclick="localStorage.setItem('api_key',submit.value);submitContainer.style.display='none'">ojbk</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="./jszip.min.js"></script>
+<script src="./index.js"></script>
+
+</html>
