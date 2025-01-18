@@ -1,6 +1,5 @@
 const file = document.getElementById('file')
 const download = document.getElementById('download')
-const bids = []
 let legacy = localStorage.getItem('api_key');
 const showkey = document.getElementById('showkey');
 const api_key_dom = document.getElementById('submit')
@@ -27,7 +26,6 @@ prepare your file then throw it to the file input area
 add your api key, it will be bottom of your osu account setting page;
 then click 下载 and wait
 
-dont support sid yet
 `);
 
 if (legacy) {
@@ -47,6 +45,7 @@ download.onclick = function () {
   const reader = new FileReader()
   reader.onload = async function () {
     const lines = reader.result.split('\n').filter(Boolean)
+    const bids = [];
     if (lines.length > 100) {
       return alert('最多一次下100张图')
     }
@@ -60,6 +59,9 @@ download.onclick = function () {
     const beatmaps = [];
     logWrite('准备获取谱面信息\n')
     await getBeatmapsInfo(beatmaps, bids);
+    if(!beatmaps.length) {
+      return alert('没有找到谱面, 如果bid没错, 请检查api是否正确填写');
+    }
     logWrite('准备下载\n')
     downloadBeatmaps(beatmaps)
   }
