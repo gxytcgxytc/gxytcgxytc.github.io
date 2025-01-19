@@ -56,12 +56,17 @@ download.onclick = function () {
         bids.push(bid)
       }
     }
-    const beatmaps = [];
+    let beatmaps = [];
     logWrite('准备获取谱面信息\n')
     await getBeatmapsInfo(beatmaps, bids);
     if(!beatmaps.length) {
       return alert('没有找到谱面, 如果bid没错, 请检查api是否正确填写');
     }
+    // beatmaps根据sid去重
+    beatmaps = [...new Set(beatmaps.map(a => a.beatmapset_id))].map(a => {
+      const b = beatmaps.find(b => b.beatmapset_id === a);
+      return b;
+    });
     logWrite('准备下载\n')
     downloadBeatmaps(beatmaps)
   }
