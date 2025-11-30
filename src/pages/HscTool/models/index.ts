@@ -5,11 +5,10 @@ export default () => {
   const [config, setConfig] = useState<any>(() => {
     try {
       const _ = JSON.parse(localStorage.getItem("hsc-config") || 'null')
-      return _;
-
+      return _ || undefined
     } catch (e) {
       console.log('未找到缓存')
-      return null;
+      return undefined;
 
     }
   })

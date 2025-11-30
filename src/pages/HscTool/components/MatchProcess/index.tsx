@@ -109,7 +109,7 @@ const MatchProcess: React.FC = () => {
                       };
                       pickMap(map, str as 'blue' | 'red', mod)
                     } else {
-                      strikeMap(map)
+                      strikeMap(map, str as 'blue' | 'red', mod)
                     }
                   }}
                   mapPool={getNextAvailableMaps(str as 'all' | 'red' | 'blue')}

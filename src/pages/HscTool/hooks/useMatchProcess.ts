@@ -1,9 +1,8 @@
 import { useCallback, useState, useEffect } from "react";
 import poolsData from '../pools.json';
-import rulesData from '../rules.txt';
-import { useModel } from "@umijs/max";
 import { _getNextAvailableMaps } from "../utils";
 
+// 统一的地图项接口
 export interface MapItem {
   id: string;
   mod: string;
@@ -13,14 +12,20 @@ export interface MapItem {
   team?: 'blue' | 'red' | 'all';
 }
 
+// 扩展的比赛配置接口，包含所有需要的选项
 export interface MatchConfig {
   poolType: "Ro16" | "QF" | "SF" | "F" | "GF";
   classType: string;
-  setType: string;
+  setType: string[]; // 修改为string[]以匹配utils.ts中的使用方式
   boNumber: number;
   currentPick: number;
+  restrictedMod?: string; // 用于Class B Set 2规则
+  teamPickCounts?: Record<string, Record<string, number>>; // 用于跟踪各队伍的pick情况
+  lostMods?: string[]; // 用于Class C Set 2规则
+  winningMods?: string[]; // 用于Class C Set 2规则
 }
 
+// 统一的比赛历史接口
 export interface MatchHistory {
   mapId: string;
   team: 'blue' | 'red' | 'all';
@@ -31,14 +36,18 @@ export interface MatchHistory {
 const defaultConfig: MatchConfig = {
   poolType: 'Ro16',
   classType: 'Class C',
-  setType: 'Set 3',
+  setType: ['Class C', 'c-set3'], // 默认为c-set3
   boNumber: 7,
-  currentPick: 0
+  currentPick: 0,
+  teamPickCounts: {
+    blue: {},
+    red: {}
+  },
+  lostMods: [],
+  winningMods: []
 };
+
 export default (config: MatchConfig = defaultConfig) => {
-  // 默认配置
-
-
   // 初始化图池
   const [mapPool, setMapPool] = useState<MapItem[]>([]);
 
@@ -48,7 +57,7 @@ export default (config: MatchConfig = defaultConfig) => {
   // 已Strike的图
   const [strikedMaps, setStrikedMaps] = useState<MapItem[]>([]);
 
-  // Bo
+  // Bo数量
   const [bo, setBo] = useState<number>(9);
 
   // 初始化图池数据
@@ -69,30 +78,73 @@ export default (config: MatchConfig = defaultConfig) => {
     }
   }, [config.poolType]);
 
-
   // 标记图为已Strike
-  const handleStrikeMap = useCallback((mapId: string) => {
+  const handleStrikeMap = useCallback((mapId: string, team: 'blue' | 'red' | 'all') => {
+    const targetMap = mapPool.find(map => map.id === mapId);
+    if (!targetMap) return;
+
     setMapPool(prev => prev.map(map =>
       map.id === mapId ? { ...map, isStriked: !map.isStriked } : map
     ));
-
-  }, []);
+    
+    // 如果地图被strike，添加到strikedMaps
+    if (!targetMap.isStriked) {
+      setStrikedMaps(prev => [...prev, { 
+        id: mapId, 
+        mod: targetMap.mod, 
+        team, 
+        isStriked: true,
+        isPicked: false
+      }]);
+    } else {
+      // 如果取消strike，从strikedMaps中移除
+      setStrikedMaps(prev => prev.filter(map => map.id !== mapId));
+    }
+  }, [mapPool]);
 
   // 选择图
-  const handlePickMap = useCallback((mapId: string, team: 'blue' | 'red' | 'all', mod: string) => {
-    const newOrder = config.currentPick + 1;
+  const handlePickMap = useCallback((mapId: string, team: 'blue' | 'red' | 'all') => {
+    const targetMap = mapPool.find(map => map.id === mapId);
+    if (!targetMap) return;
+
+    const newOrder = matchHistory.length + 1;
 
     setMapPool(prev => prev.map(map =>
-      map.id === mapId ? { ...map, isPicked: true, pickOrder: newOrder, team } : map
+      map.id === mapId ? { 
+        ...map, 
+        isPicked: true, 
+        pickOrder: newOrder, 
+        team 
+      } : map
     ));
 
-    setMatchHistory(prev => [...prev, { mapId, team, order: newOrder, mod }]);
+    setMatchHistory(prev => [...prev, { 
+      mapId, 
+      team, 
+      order: newOrder, 
+      mod: targetMap.mod 
+    }]);
 
-  }, [config.currentPick]);
+    // 更新teamPickCounts
+    if (!config.teamPickCounts) {
+      config.teamPickCounts = {
+        blue: {},
+        red: {}
+      };
+    }
+    
+    if (!config.teamPickCounts[team]) {
+      config.teamPickCounts[team] = {};
+    }
+    
+    config.teamPickCounts[team][targetMap.mod] = 
+      (config.teamPickCounts[team][targetMap.mod] || 0) + 1;
+
+  }, [mapPool, matchHistory, config]);
 
   // 获取可用的图
   const getAvailableMaps = useCallback(() => {
-    return mapPool.filter(map => !map.isPicked);
+    return mapPool.filter(map => !map.isPicked && !map.isStriked);
   }, [mapPool]);
 
   // 获取上一次pick的图
@@ -102,36 +154,60 @@ export default (config: MatchConfig = defaultConfig) => {
     return mapPool.find(map => map.id === lastHistory.mapId);
   }, [matchHistory, mapPool]);
 
- 
+  // 自动处理starter maps的strike逻辑
   useEffect(() => {
+    // 如果已有matchHistory，则不处理
     if (matchHistory.length > 0) return;
-    // S中未Strike图只剩一张之后自动pick
-
+    
     const starterMaps = mapPool.filter(map => map.id.startsWith('S'));
     const unStrikedStarterMaps = starterMaps.filter(map => !map.isStriked);
-    const strikedStarterMaps = starterMaps.filter(map => map.isStriked);
-    setStrikedMaps(strikedStarterMaps);
+       
+    // 当只剩一张未strike的starter map时，自动pick
     if (unStrikedStarterMaps.length === 1) {
-      handlePickMap(unStrikedStarterMaps[0].id, 'all', unStrikedStarterMaps[0].mod);
+      handlePickMap(unStrikedStarterMaps[0].id, 'all');
     }
-  }, [mapPool])
+  }, [mapPool, matchHistory.length, handlePickMap]);
 
-
-  // 重置流程到
+  // 重置流程到指定地图
   const resetToMap = useCallback((mapId: string) => {
     const mapIndex = matchHistory.findIndex(item => item.mapId === mapId);
     if (mapIndex === -1) return;
-    setMatchHistory(prev => prev.slice(0, mapIndex));
+    
+    // 重置matchHistory
+    const newMatchHistory = matchHistory.slice(0, mapIndex);
+    setMatchHistory(newMatchHistory);
+    
+    // 重置mapPool状态
     setMapPool(prev => prev.map(map => {
-      const resetmaps = matchHistory.slice(mapIndex);
-      return resetmaps.some(item => item.mapId === map.id) ? {
-        ...map, 
-        isPicked: false, 
-        pickOrder: 0, 
-      } : map
-    }).map(map => mapIndex === 0 ? {...map, isStriked: false} : map));
-  }, [matchHistory, setMatchHistory, setStrikedMaps, setMapPool]);
-
+      // 找出需要重置的地图
+      const resetMaps = matchHistory.slice(mapIndex);
+      const needsReset = resetMaps.some(item => item.mapId === map.id);
+      
+      if (needsReset) {
+        return {
+          ...map,
+          isPicked: false,
+          pickOrder: undefined,
+          team: undefined
+        };
+      }
+      
+      // 如果是重置到第一步，清除所有strike状态
+      if (mapIndex === 0) {
+        return {
+          ...map,
+          isStriked: false
+        };
+      }
+      
+      return map;
+    }));
+    
+    // 如果是重置到第一步，清除strikedMaps
+    if (mapIndex === 0) {
+      setStrikedMaps([]);
+    }
+  }, [matchHistory]);
 
   return {
     mapPool,
@@ -141,8 +217,10 @@ export default (config: MatchConfig = defaultConfig) => {
     strikeMap: handleStrikeMap,
     pickMap: handlePickMap,
     availableMaps: getAvailableMaps(),
-    getNextAvailableMaps: (team: 'all' | 'red' | 'blue') => _getNextAvailableMaps(mapPool, matchHistory, strikedMaps, config, team),
+    getNextAvailableMaps: (team: 'all' | 'red' | 'blue') => 
+      _getNextAvailableMaps(mapPool, matchHistory, strikedMaps, config, team),
     lastPickedMap: getLastPickedMap(),
     resetToMap,
+    bo
   };
 };

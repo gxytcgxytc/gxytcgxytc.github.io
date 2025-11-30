@@ -38,11 +38,11 @@ export const applyClassASet1Rules = (
 
   // 过滤掉与上一次相同mod的地图（NM除外）
   const filteredMaps = availableMaps.filter(map =>
-    map.mod !== lastPickedMap.mod || map.mod === 'NM'
+    map.mod !== 'TB' && map.mod !== lastPickedMap.mod || map.mod === 'NM'
   );
-
+  const TB = mapPool.find(map => map.mod === 'TB') as MapItem;
   // 如果过滤后没有可选地图，则返回原始可用地图
-  return filteredMaps.length > 0 ? filteredMaps : availableMaps;
+  return filteredMaps.length > 0 ? filteredMaps.concat([TB]) : availableMaps;
 };
 
 /**
@@ -89,6 +89,7 @@ export const applyClassASet2Rules = (
     if (filteredMaps.length > 0 && followsOrder) {
       return filteredMaps.concat(tbpicked ? [] : [TB]);
     }
+    return availableMaps;
   }
   if (pickedMaps.length >= 5) {
     // 计算各mod剩余谱面数量
@@ -122,25 +123,44 @@ export const applyClassASet3Rules = (
   availableMaps: MapItem[],
   matchHistory: MatchHistory[],
   mapPool: MapItem[],
-  strikedMaps: string[]
+  strikedMaps: MapItem[],
+  team: 'all' | 'red' | 'blue',
 ): MapItem[] => {
-  const pickedMaps = matchHistory.map(history =>
-    mapPool.find(map => map.id === history.mapId)
-  ).filter(Boolean) as MapItem[];
-
+  // 获取当前队伍的pick历史
+  if (matchHistory.length === 0) return availableMaps;
+  const lastMapId = parseInt(matchHistory[matchHistory.length - 1].mapId.replace(/[^0-9]/g, ''));
+  const secondLastMapId = parseInt(matchHistory[matchHistory.length - 2]?.mapId.replace(/[^0-9]/g, ''));
+  const teamPickedMaps = matchHistory
+    .filter(history => history.team === team)
+    .map(history => mapPool.find(map => map.id === history.mapId))
+    .filter(Boolean) as MapItem[];
   // 规则1：第一次pick必须和对方第一次Strike的谱面mod相同
-  if (pickedMaps.length === 0 && strikedMaps.length > 0) {
-    const firstStrikedMap = mapPool.find(map => map.id === strikedMaps[0]);
-    if (firstStrikedMap) {
-      const filteredMaps = availableMaps.filter(map => map.mod === firstStrikedMap.mod);
+  if (teamPickedMaps.length === 0 && strikedMaps.length > 0) {
+    // 确定对方队伍
+    const opponentTeam = team === 'red' ? 'blue' : 'red';
+
+    // 找到对方第一次Strike的谱面
+    const opponentFirstStrikedMap = strikedMaps.find(map =>
+      map.team === opponentTeam
+    );
+
+    if (opponentFirstStrikedMap) {
+      let filteredMaps = availableMaps.filter(map =>
+        map.mod === opponentFirstStrikedMap.mod
+      );
+      // 这里也要考虑图号的逻辑
+      if (lastMapId > secondLastMapId) {
+        filteredMaps = filteredMaps.filter(map => {
+          const mapIdNum = parseInt(map.id.replace(/[^0-9]/g, ''));
+          return mapIdNum < lastMapId;
+        });
+      }
       return filteredMaps.length > 0 ? filteredMaps : availableMaps;
     }
   }
 
-  // 规则2：图号交替增减
-  if (pickedMaps.length >= 2) {
-    const lastMapId = parseInt(pickedMaps[pickedMaps.length - 1].id.replace(/[^0-9]/g, ''));
-    const secondLastMapId = parseInt(pickedMaps[pickedMaps.length - 2].id.replace(/[^0-9]/g, ''));
+
+  if (matchHistory.length >= 1) {
 
     if (lastMapId > secondLastMapId) {
       // 上一次pick图号大于前一次，本次应小于上一次
@@ -150,12 +170,7 @@ export const applyClassASet3Rules = (
       });
       return filteredMaps.length > 0 ? filteredMaps : availableMaps;
     } else {
-      // 上一次pick图号小于前一次，本次应大于上一次
-      const filteredMaps = availableMaps.filter(map => {
-        const mapIdNum = parseInt(map.id.replace(/[^0-9]/g, ''));
-        return mapIdNum > lastMapId;
-      });
-      return filteredMaps.length > 0 ? filteredMaps : availableMaps;
+      return availableMaps;
     }
   }
 
@@ -446,13 +461,13 @@ export const _getNextAvailableMaps = (
 ): MapItem[] => {
   const availableMaps = getAvailableMaps(mapPool);
   // 根据不同的setType[1]应用相应的规则, setType的数据类型是: [classA, a-set1], setType的可能值 共9种 写9个case
-  switch (config.setType[1]) {
+  switch (config.setType?.[1]) {
     case 'a-set1':
       return applyClassASet1Rules(availableMaps, matchHistory, mapPool, team);
     case 'a-set2':
       return applyClassASet2Rules(availableMaps, matchHistory, mapPool);
     case 'a-set3':
-      return applyClassASet3Rules(availableMaps, matchHistory, mapPool, strikedMaps);
+      return applyClassASet3Rules(availableMaps, matchHistory, mapPool, strikedMaps, team);
     case 'b-set1':
       return applyClassBSet1Rules(availableMaps, matchHistory, mapPool);
     case 'b-set2':
