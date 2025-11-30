@@ -1,15 +1,16 @@
-import Guide from '@/components/Guide';
-import { trim } from '@/utils/format';
 import { PageContainer } from '@ant-design/pro-components';
 import { useModel } from '@umijs/max';
+import Configs from './components/Configs';
+import MatchProcess from './components/MatchProcess';
 import styles from './index.less';
 
 const HomePage: React.FC = () => {
-  const { name } = useModel('global');
+
   return (
-    <PageContainer ghost>
+    <PageContainer ghost title="HSC比赛助手">
       <div className={styles.container}>
-        <Guide name={trim(name)} />
+        <Configs />
+        <MatchProcess />
       </div>
     </PageContainer>
   );
