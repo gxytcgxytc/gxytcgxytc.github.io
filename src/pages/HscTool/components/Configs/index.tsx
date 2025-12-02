@@ -20,7 +20,7 @@ const Configs: React.FC<any> = () => {
       <Form
         form={form}
         layout="inline"
-        onValuesChange={(_, values)=>{
+        onValuesChange={(_, values) => {
           setConfig(values);
         }}
       >
@@ -47,6 +47,13 @@ const Configs: React.FC<any> = () => {
             }}
             placeholder="请选择图池类型"
           />
+        </Form.Item>
+        <Form.Item
+          name="boNumber"
+          label="Bo?"
+          rules={[{ required: true, message: 'select a set' }]}
+        >
+          <InputNumber min={9} max={13} />
         </Form.Item>
       </Form>
     </Card>

@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import poolsData from '../pools.json';
 import { _getNextAvailableMaps } from "../utils";
+import { ruleDescriptions } from "../constances";
 
 // 统一的地图项接口
 export interface MapItem {
@@ -37,7 +38,7 @@ const defaultConfig: MatchConfig = {
   poolType: 'Ro16',
   classType: 'Class C',
   setType: ['Class C', 'c-set3'], // 默认为c-set3
-  boNumber: 7,
+  boNumber: 9,
   currentPick: 0,
   teamPickCounts: {
     blue: {},
@@ -86,13 +87,13 @@ export default (config: MatchConfig = defaultConfig) => {
     setMapPool(prev => prev.map(map =>
       map.id === mapId ? { ...map, isStriked: !map.isStriked } : map
     ));
-    
+
     // 如果地图被strike，添加到strikedMaps
     if (!targetMap.isStriked) {
-      setStrikedMaps(prev => [...prev, { 
-        id: mapId, 
-        mod: targetMap.mod, 
-        team, 
+      setStrikedMaps(prev => [...prev, {
+        id: mapId,
+        mod: targetMap.mod,
+        team,
         isStriked: true,
         isPicked: false
       }]);
@@ -110,19 +111,19 @@ export default (config: MatchConfig = defaultConfig) => {
     const newOrder = matchHistory.length + 1;
 
     setMapPool(prev => prev.map(map =>
-      map.id === mapId ? { 
-        ...map, 
-        isPicked: true, 
-        pickOrder: newOrder, 
-        team 
+      map.id === mapId ? {
+        ...map,
+        isPicked: true,
+        pickOrder: newOrder,
+        team
       } : map
     ));
 
-    setMatchHistory(prev => [...prev, { 
-      mapId, 
-      team, 
-      order: newOrder, 
-      mod: targetMap.mod 
+    setMatchHistory(prev => [...prev, {
+      mapId,
+      team,
+      order: newOrder,
+      mod: targetMap.mod
     }]);
 
     // 更新teamPickCounts
@@ -132,19 +133,19 @@ export default (config: MatchConfig = defaultConfig) => {
         red: {}
       };
     }
-    
+
     if (!config.teamPickCounts[team]) {
       config.teamPickCounts[team] = {};
     }
-    
-    config.teamPickCounts[team][targetMap.mod] = 
+
+    config.teamPickCounts[team][targetMap.mod] =
       (config.teamPickCounts[team][targetMap.mod] || 0) + 1;
 
   }, [mapPool, matchHistory, config]);
 
   // 获取可用的图
   const getAvailableMaps = useCallback(() => {
-    return mapPool.filter(map => !map.isPicked && !map.isStriked);
+    return mapPool.filter(map => !map.isPicked);
   }, [mapPool]);
 
   // 获取上一次pick的图
@@ -158,10 +159,10 @@ export default (config: MatchConfig = defaultConfig) => {
   useEffect(() => {
     // 如果已有matchHistory，则不处理
     if (matchHistory.length > 0) return;
-    
+
     const starterMaps = mapPool.filter(map => map.id.startsWith('S'));
     const unStrikedStarterMaps = starterMaps.filter(map => !map.isStriked);
-       
+
     // 当只剩一张未strike的starter map时，自动pick
     if (unStrikedStarterMaps.length === 1) {
       handlePickMap(unStrikedStarterMaps[0].id, 'all');
@@ -172,17 +173,20 @@ export default (config: MatchConfig = defaultConfig) => {
   const resetToMap = useCallback((mapId: string) => {
     const mapIndex = matchHistory.findIndex(item => item.mapId === mapId);
     if (mapIndex === -1) return;
-    
+    const ruleBreak = localStorage.getItem('ruleBreak');
+    if (mapIndex + 1 < parseInt(ruleBreak || '0')) {
+      localStorage.setItem('ruleBreak', '');
+    };
     // 重置matchHistory
     const newMatchHistory = matchHistory.slice(0, mapIndex);
     setMatchHistory(newMatchHistory);
-    
+
     // 重置mapPool状态
     setMapPool(prev => prev.map(map => {
       // 找出需要重置的地图
       const resetMaps = matchHistory.slice(mapIndex);
       const needsReset = resetMaps.some(item => item.mapId === map.id);
-      
+
       if (needsReset) {
         return {
           ...map,
@@ -191,7 +195,7 @@ export default (config: MatchConfig = defaultConfig) => {
           team: undefined
         };
       }
-      
+
       // 如果是重置到第一步，清除所有strike状态
       if (mapIndex === 0) {
         return {
@@ -199,10 +203,10 @@ export default (config: MatchConfig = defaultConfig) => {
           isStriked: false
         };
       }
-      
+
       return map;
     }));
-    
+
     // 如果是重置到第一步，清除strikedMaps
     if (mapIndex === 0) {
       setStrikedMaps([]);
@@ -217,10 +221,11 @@ export default (config: MatchConfig = defaultConfig) => {
     strikeMap: handleStrikeMap,
     pickMap: handlePickMap,
     availableMaps: getAvailableMaps(),
-    getNextAvailableMaps: (team: 'all' | 'red' | 'blue') => 
+    getNextAvailableMaps: (team: 'all' | 'red' | 'blue') =>
       _getNextAvailableMaps(mapPool, matchHistory, strikedMaps, config, team),
     lastPickedMap: getLastPickedMap(),
     resetToMap,
-    bo
+    bo,
+    desc: ruleDescriptions[config.setType?.[1]],
   };
 };

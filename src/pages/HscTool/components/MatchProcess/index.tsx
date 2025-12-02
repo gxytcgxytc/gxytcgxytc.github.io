@@ -20,26 +20,16 @@ const MatchProcess: React.FC = () => {
     getNextAvailableMaps,
     lastPickedMap,
     resetToMap,
+    desc,
   } = useMatchProcess(config);
-  console.log(
-    {
-      matchHistory,
-      strikedMaps,
-      strikeMap,
-      pickMap,
-      availableMaps,
-      getNextAvailableMaps,
-      lastPickedMap,
-    }
 
-  )
 
   const currentStage = matchHistory.length > 0 ? 'pick' : 'strike'
   return (
     <>
 
-      < Card title="当前规则" style={{ marginBottom: 20 }}>
-
+      < Card title="当前规则" style={{ marginBottom: 20, whiteSpace: 'break-space' }}>
+        {desc.description}
       </Card >
       <Card title="比赛流程" style={{ marginBottom: 20 }}>
         <Row gutter={24}>
@@ -104,12 +94,12 @@ const MatchProcess: React.FC = () => {
                   onMapSelect={(map, mod) => {
                     if (matchHistory.length > 0) {
                       if (mod === 'TB') {
-                        pickMap(map, 'all', mod)
+                        pickMap(map, 'all')
                         return;
                       };
-                      pickMap(map, str as 'blue' | 'red', mod)
+                      pickMap(map, str as 'blue' | 'red')
                     } else {
-                      strikeMap(map, str as 'blue' | 'red', mod)
+                      strikeMap(map, str as 'blue' | 'red')
                     }
                   }}
                   mapPool={getNextAvailableMaps(str as 'all' | 'red' | 'blue')}
@@ -123,11 +113,6 @@ const MatchProcess: React.FC = () => {
 
       </Card>
 
-
-      {/* 下一张可选图提示 */}
-      < Card title="下一张可选图" style={{ marginBottom: 20 }}>
-
-      </Card >
     </>
   );
 };

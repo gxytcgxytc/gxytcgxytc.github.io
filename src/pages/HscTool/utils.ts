@@ -252,15 +252,19 @@ export const applyClassBSet2Rules = (
 
 /**
  * Class B Set 3 par et impar规则
+ * 规则2失效的情况没考虑队伍, 需要使用者自行判断
  */
 export const applyClassBSet3Rules = (
   availableMaps: MapItem[],
   matchHistory: MatchHistory[],
   mapPool: MapItem[],
-  config: MatchConfig
+  config: MatchConfig,
+  team: 'red' | 'blue' | 'all',
 ): MapItem[] => {
-  // 规则1：pick的奇偶性与pick次数相反
-  const currentPickNumber = matchHistory.length + 1;
+  if (matchHistory.length === 0) return availableMaps
+
+  // 规则1：pick的奇偶性与pick次数相反 按照每个队伍自己的pick次数来定
+  const currentPickNumber = matchHistory.filter(item => item.team === team).length + 1;
   const isEvenPick = currentPickNumber % 2 === 0;
 
   // 根据pick次数过滤图号奇偶性
@@ -272,12 +276,16 @@ export const applyClassBSet3Rules = (
     return isEvenPick ? !isEvenMapNum : isEvenMapNum;
   });
 
-  if (parityFilteredMaps.length === 0) return availableMaps;
+  if (parityFilteredMaps.filter(map => map.mod !== 'TB').length === 0) return availableMaps;
+
+
+  const ruleBreak = localStorage.getItem('ruleBreak');
+  if (parseInt(ruleBreak || '0') >= matchHistory.length + 1) return parityFilteredMaps;
 
   // 规则2：根据行列式奇偶性选择mod
   // 计算矩阵行列式
-  const starterCount = mapPool.filter(map => map.id.startsWith('S') && !map.isStriked && !map.isPicked).length;
-  const counterpickCount = mapPool.filter(map => map.id.startsWith('C') && !map.isStriked && !map.isPicked).length;
+  const starterCount = mapPool.filter(map => map.id.startsWith('S') && !map.isPicked).length;
+  const counterpickCount = mapPool.filter(map => map.id.startsWith('C') && !map.isPicked).length;
   const boNumber = config.boNumber;
 
   const modCounts = {
@@ -285,7 +293,7 @@ export const applyClassBSet3Rules = (
     HD: availableMaps.filter(map => map.mod === 'HD').length,
     HR: availableMaps.filter(map => map.mod === 'HR').length,
     DT: availableMaps.filter(map => map.mod === 'DT').length,
-    FM: availableMaps.filter(map => map.mod === 'FM').length
+    FM: availableMaps.filter(map => map.mod === 'FM' || map.mod === 'TB').length
   };
 
   // 计算3x3矩阵的行列式
@@ -293,7 +301,7 @@ export const applyClassBSet3Rules = (
   const matrix = [
     [starterCount, counterpickCount, boNumber],
     [modCounts.NM, modCounts.HD, modCounts.HR],
-    [modCounts.DT, modCounts.FM, currentPickNumber]
+    [modCounts.DT, modCounts.FM, matchHistory.length + 1]
   ];
 
   const determinant =
@@ -314,8 +322,10 @@ export const applyClassBSet3Rules = (
       return ['NM', 'DT'].includes(map.mod);
     }
   });
-
-  return finalFilteredMaps.length > 0 ? finalFilteredMaps : parityFilteredMaps;
+  if (finalFilteredMaps.filter(map => map.mod !== 'TB').length <= 0) {
+    localStorage.setItem('ruleBreak', `${matchHistory.length + 1}`);
+  }
+  return finalFilteredMaps.filter(map => map.mod !== 'TB').length > 0 ? finalFilteredMaps : parityFilteredMaps;
 };
 
 /**
@@ -333,14 +343,14 @@ export const applyClassCSet1Rules = (
   // 前6次pick后开始应用规则
   if (pickedMaps.length >= 6) {
     const allMods = ['NM', 'HD', 'HR', 'DT', 'FM'];
-    const usedMods = new Set(pickedMaps.map(map => map.mod).filter(mod => allMods.includes(mod)));
+    const usedMods = new Set(pickedMaps.slice(0, 6).map(map => map.mod).filter(mod => allMods.includes(mod)));
     const unusedMods = allMods.filter(mod => !usedMods.has(mod));
 
     if (unusedMods.length > 0) {
       const filteredMaps = availableMaps.filter(map =>
         unusedMods.includes(map.mod) || map.mod === 'TB'
       );
-      return filteredMaps.length > 0 ? filteredMaps : availableMaps;
+      return filteredMaps.filter(map => map.mod !== 'TB').length > 0 ? filteredMaps : availableMaps;
     }
   }
 
@@ -349,35 +359,48 @@ export const applyClassCSet1Rules = (
 
 /**
  * Class C Set 2 veritas neglecta规则
- * 注意：此规则需要额外的状态来跟踪落败的mod
+ * 1. 如果某一队在某个mod的谱面上落败（NM除外），记录从此时开始直到其对手的下一次选图为止此队落败的这些mod，
+ *    其对手的下一个pick必须从这些mod的谱面中产生，除非没有可选的谱面
+ * 2. 如果某一队pick了某个mod的谱面并取胜（NM除外），则其对手的下一次pick无法选择此mod的谱面。
+ *    这条规则的优先级最高，即当这条规则与第1条冲突时，冲突部分以这条规则为准
+ * 未实现
  */
 export const applyClassCSet2Rules = (
   availableMaps: MapItem[],
   matchHistory: MatchHistory[],
   mapPool: MapItem[],
-  config: MatchConfig & { lostMods?: string[]; winningMods?: string[] }
+  config: MatchConfig,
+  team: 'red' | 'blue' | 'all',
 ): MapItem[] => {
-  // 规则2优先级更高：胜利的mod会限制对手的下一次pick
-  if (config.winningMods && config.winningMods.length > 0) {
-    const filteredMaps = availableMaps.filter(map =>
-      !config.winningMods!.includes(map.mod) || map.mod === 'TB'
-    );
-    if (filteredMaps.length > 0) {
-      return filteredMaps;
-    }
-  }
-
-  // 规则1：落败的mod会限制对手的下一次pick
-  if (config.lostMods && config.lostMods.length > 0) {
-    const filteredMaps = availableMaps.filter(map =>
-      config.lostMods!.includes(map.mod) || map.mod === 'TB'
-    );
-    if (filteredMaps.length > 0) {
-      return filteredMaps;
-    }
-  }
-
+  // 如果没有历史记录，直接返回所有可用地图
   return availableMaps;
+  if (!matchHistory || matchHistory.length === 0) {
+  }
+
+  // 确定当前选图者：当前选图者是上一局的输家（上一局的选图者）
+  const lastMatch = matchHistory[matchHistory.length - 1];
+  const currentPickerTeam = lastMatch.team; // 当前选图者是上一局的选图者（上一局的输家）
+  if (currentPickerTeam === team) return availableMaps;
+  const lastMod = lastMatch.mod;
+  if (lastMod === 'TB') return availableMaps;
+  if (lastMod === 'NM') return availableMaps;
+  // 按照matchhistory倒序查找, 对手连续选图的所有mod
+  const opponentMods: string[] = [];
+  // rules2 对手赢的pick不能选
+  for (let i = matchHistory.length - 1; i >= 0; i--) {
+    const match = matchHistory[i];
+    if (match.team !== currentPickerTeam && match.mod !== lastMod) {
+      opponentMods.push(match.mod);
+    } else {
+      break;
+    }
+  }
+  
+
+  // 本队只能选这些mod的谱面
+  const filteredMaps = availableMaps.filter(map => opponentMods.includes(map.mod));
+
+
 };
 
 /**
@@ -473,11 +496,11 @@ export const _getNextAvailableMaps = (
     case 'b-set2':
       return applyClassBSet2Rules(availableMaps, matchHistory, mapPool, strikedMaps, config);
     case 'b-set3':
-      return applyClassBSet3Rules(availableMaps, matchHistory, mapPool, config);
+      return applyClassBSet3Rules(availableMaps, matchHistory, mapPool, config, team);
     case 'c-set1':
       return applyClassCSet1Rules(availableMaps, matchHistory, mapPool);
     case 'c-set2':
-      return applyClassCSet2Rules(availableMaps, matchHistory, mapPool, config);
+      return applyClassCSet2Rules(availableMaps, matchHistory, mapPool, config, team);
     case 'c-set3':
       return applyClassCSet3Rules(availableMaps, matchHistory, mapPool);
     default:
